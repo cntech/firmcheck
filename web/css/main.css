@@ -1,0 +1,25 @@
+body {
+  padding: 20px;
+}
+
+table form {
+  margin-bottom: 0;
+}
+
+.fc-pagination-left .uk-pagination {
+  text-align: left;
+}
+
+.fc-pagination-right .uk-pagination {
+  text-align: right;
+}
+
+.wrappable-pagination > li {
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+
+.clickable-badge {
+  cursor: pointer;
+}
+

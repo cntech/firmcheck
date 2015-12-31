@@ -1,0 +1,7 @@
+<ul class="uk-pagination fc-pagination wrappable-pagination">
+  <li ng-repeat="page in pagination.pages" ng-class="{'uk-active':pageActive(page.index)}">
+    <a ng-if="!pageActive(page.index)" ng-bind="page.name" ng-click="loadPage(page.index)"></a>
+    <span ng-if="pageActive(page.index)" ng-bind="page.name" ng-click="loadPage(page.index)"></span>
+  </li>
+</ul>
+

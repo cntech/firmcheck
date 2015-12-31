@@ -1,0 +1,78 @@
+<html>
+<head>
+  <title>FirmCheck</title>
+  <link rel="stylesheet" media="screen" href="/css/uikit.gradient.css">
+  <link rel="stylesheet" media="screen" href="/css/main.css">
+  <script src="/js/jquery.js" type="text/javascript"></script>
+  <script src="/js/angular.js" type="text/javascript"></script>
+  <script src="/js/angular-resource.js" type="text/javascript"></script>
+  <script src="/js/uikit.js" type="text/javascript"></script>
+  <script src="/js/firmcheck.js" type="text/javascript"></script>
+</head>
+<body>
+  <h1>FirmCheck</h1>
+  <div ng-app="firmcheck" ng-controller="dashboard">
+
+    <div id="delete-rating-modal" class="uk-modal">
+      <div class="uk-modal-dialog">
+        <div class="uk-modal-header">
+          <h2>Delete Rating?</h2>
+        </div>
+        <p>The rating <strong>{{deleteRatingModal.ratingRecord.name}}:{{deleteRatingModal.ratingRecord.rating}}</strong>
+          will be deleted from firm <strong>{{deleteRatingModal.firmRecord.name}}</strong>.</p>
+        <div class="uk-modal-footer uk-text-right">
+          <button type="button" class="uk-button" ng-click="hideDeleteRatingModal()">Cancel</button>
+          <button type="button" class="uk-button uk-button-primary" ng-click="forceDeleteRating()">Delete Rating</button>
+        </div>
+      </div>
+    </div>
+    
+    <div>
+      <ul class="uk-subnav uk-subnav-pill">
+        <li ng-repeat="area in areas" ng-class="{'uk-active':areaActive(area.area)}"><a ng-bind="area.area" ng-click="setFilter('area', area.area)"></a></li>
+      </ul>
+    </div>
+    
+    <div ng-include="'/pagination.html'" class="fc-pagination-left"></div>
+    
+    <div ng-show="!records.length">
+      <p><img src="/img/load.gif" alt="load animation"></p>
+    </div>
+    
+    <table class="uk-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Homepage(s)</th>
+          <th>Ratings</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr ng-repeat="record in records">
+          <td><span ng-bind="record.name"></span></td>
+          <td><span ng-repeat="homepage in record.homepages"><a ng-href="{{homepage}}" ng-bind="homepage" target="_blank"></a>{{$last ? '' : ', '}}</span></td>
+          <td>
+            <form class="uk-form" ng-submit="submitRating(record)">
+              <p class="uk-text-nowrap">
+                <input type="text" name="name" placeholder="r.name" ng-model="record.rating.name" class="uk-form-small uk-form-width-mini">
+                <input type="text" name="value" placeholder="r.value" ng-model="record.rating.value" class="uk-form-small uk-form-width-mini">
+                <button type="submit" class="uk-button uk-button-small">Rate</button>
+              </p>
+              <p ng-if="record.noRatings"><em>ratings not loaded</em></p>
+              <p>
+                <span ng-repeat="rating in record.ratings">
+                  <span class="uk-badge clickable-badge" ng-click="deleteRating(record, rating)">{{rating.name}}:{{rating.rating}}{{$last ? '' : ' '}}</span>
+                </span>
+              </p>
+            </form>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <div ng-include="'/pagination.html'" class="fc-pagination-right"></div>
+    
+  </div>
+</body>
+</html>
+
