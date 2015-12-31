@@ -73,6 +73,8 @@ angular.module('firmcheck').controller('dashboard', [
       if(inputs.companyName) {
         $scope.filters['f.name'] = {}
         $scope.filters['f.name']['$like'] = '%'+inputs.companyName+'%'
+      } else {
+        delete $scope.filters['f.name']
       }
     }
     
