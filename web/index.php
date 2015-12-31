@@ -23,54 +23,119 @@ $app->register(new Silex\Provider\DoctrineServiceProvider(), array(
 
 // READ
 
-function filter($qb, $columns, $filter) {
-  $not_columns = array_map(function($item) { return '!'.$item; }, $columns);
-  $i = 1;
-  foreach($filter as $key => $value) {
-    $index = array_search($key, $columns);
-    if($index !== FALSE) {
-      // use eq comparison
-      $secure_key = $columns[$index];
-      $qb->andWhere($secure_key.'=:value'.$i)
-         ->setParameter('value'.$i, $value);
-      //echo 'value eq'.$i.' '.$secure_key."\n";
-      $i = $i + 1;
-    } else {
-      $index = array_search($key, $not_columns);
-      if($index !== FALSE) {
-        // use neq comparison
-        $secure_key = $columns[$index];
-        $qb->andWhere($secure_key.'<>:value'.$i)
-           ->setParameter('value'.$i, $value);
-        //echo 'value neq'.$i.' '.$secure_key."\n";
-        $i = $i + 1;
-      } else {
-        return FALSE;
+function secure_field($columns, $field) {
+  $index = array_search($field, $columns);
+  if($index !== FALSE) {
+    return $columns[$index];
+  }
+  return FALSE;
+}
+
+function field_filter($qb, $param_qb, $columns, $field, $filter) {
+  $secfield = secure_field($columns, $field);
+  if($secfield !== FALSE) {
+    if(is_array($filter)) {
+      if(array_key_exists('$in', $filter)) {
+        $in_query = $secfield.' IN (';
+        $in_query.= join(', ', array_map(function($item) use ($param_qb) {
+          return $param_qb->createNamedParameter($item);
+        }, $filter['$in']));
+        $in_query.= ')';
+        return $in_query;
       }
+      if(array_key_exists('$like', $filter)) {
+        $secvalue = $param_qb->createNamedParameter($filter['$like']);
+        return $qb->expr()->like($secfield, $secvalue);
+      }
+      if(array_key_exists('$not', $filter)) {
+        $secvalue = $param_qb->createNamedParameter($filter['$not']);
+        return $qb->expr()->neq($secfield, $secvalue);
+      }
+      if(array_key_exists('$lt', $filter)) {
+        $secvalue = $param_qb->createNamedParameter($filter['$lt']);
+        return $qb->expr()->lt($secfield, $secvalue);
+      }
+      if(array_key_exists('$lte', $filter)) {
+        $secvalue = $param_qb->createNamedParameter($filter['$lte']);
+        return $qb->expr()->lte($secfield, $secvalue);
+      }
+      if(array_key_exists('$gt', $filter)) {
+        $secvalue = $param_qb->createNamedParameter($filter['$gt']);
+        return $qb->expr()->gt($secfield, $secvalue);
+      }
+      if(array_key_exists('$gte', $filter)) {
+        $secvalue = $param_qb->createNamedParameter($filter['$gte']);
+        return $qb->expr()->gte($secfield, $secvalue);
+      }
+    } else {
+      $secvalue = $param_qb->createNamedParameter($filter);
+      return $qb->expr()->eq($secfield, $secvalue);
     }
   }
-  return TRUE;
+  return '(0=1)';
+}
+
+function filter($qb, $param_qb, $columns, $filter) {
+  $result = array();
+  foreach($filter as $key => $value) {
+    if($key[0] == '$') {
+      $sub_result = filter($qb, $param_qb, $columns, $value);
+      if($filter['$and']) {
+        array_push($result, call_user_func_array(array($qb->expr(), 'andX'), $sub_result));
+      }
+      if($filter['$or']) {
+        array_push($result, call_user_func_array(array($qb->expr(), 'orX'), $sub_result));
+      }
+    } else {
+      array_push($result, field_filter($qb, $param_qb, $columns, $key, $value));
+    }
+  }
+  if(empty($result)) {
+    return '(1=1)';
+  }
+  return $result;
 }
 
 $app->get('/firms', function(Request $request) use ($app) {
   $qb = $app['db']->createQueryBuilder();
   $count_qb = $app['db']->createQueryBuilder();
+  $count_outer_qb = $app['db']->createQueryBuilder();
   
-  $filter = json_decode($request->query->get('filter'));
+  $filter = json_decode($request->query->get('filter'), TRUE);
   $offset = ((int)$request->query->get('offset')) ?: 0;
   $limit = ((int)$request->query->get('limit')) ?: FALSE;
   
-  $qb->select('*')->from('firms');
-  $count_qb->select('count(*)')->from('firms');
+  $firm_fields = array('f.id', 'f.area', 'f.name', 'f.firmenAbcUrl', 'f.homepages');
+  $rating_fields = array('GROUP_CONCAT(r.name) as rating_names', 'GROUP_CONCAT(r.rating) as rating_values');
+
+  $fields = array_merge($firm_fields, $rating_fields);
+  
+  $qb->select($fields)->from('firms', 'f');
+  $count_qb->select('COUNT(f.id)')->from('firms', 'f');
+  
+  // join and group
+  $qb->      leftJoin('f', 'ratings', 'r', 'r.firm_id = f.id');
+  $count_qb->leftJoin('f', 'ratings', 'r', 'r.firm_id = f.id');
+  $qb->groupBy($firm_fields);
+  $count_qb->groupBy($firm_fields);
   
   // filter
   $columns = array('id', 'area', 'name', 'firmenAbcUrl', 'homepages');
-  $result = filter($qb, $columns, $filter);
-  if($result === FALSE) {
-    // filter contains invalid column names
-    return $app->json(json_decode('{}'));
+  $columns = array_merge(
+    $columns,
+    array_map(function($item) { return 'f.'.$item; }, $columns),
+    array('r.name', 'r.rating')
+  );
+  $where = call_user_func_array(array($qb->expr(), 'andX'), filter($qb, $qb, $columns, $filter));
+  if(!empty($where)) {
+    $qb->where($where);
+    $count_qb->where(
+      call_user_func_array(
+        array($count_qb->expr(), 'andX'),
+        filter($count_qb, $count_outer_qb, $columns, $filter)
+      )
+    );
   }
-  filter($count_qb, $columns, $filter);
   
   // offset and limit
   $qb->setFirstResult($offset);
@@ -78,9 +143,14 @@ $app->get('/firms', function(Request $request) use ($app) {
     $qb->setMaxResults($limit);
   }
   
+  // order
+  $qb->orderBy('f.id', 'ASC');
+  
+  $count_outer_qb->select('COUNT(*)')->from('('.$count_qb->getSQL().')');
+  
   // execute the count query
-  $query = $count_qb->execute();
-  $count = (int)($query->fetch()['count(*)']);
+  $query = $count_outer_qb->execute();
+  $count = (int)($query->fetch()['COUNT(*)']);
   
   // execute the records query
   $query = $qb->execute();
@@ -89,7 +159,9 @@ $app->get('/firms', function(Request $request) use ($app) {
   // return the results as JSON object
   return $app->json(array(
     'total_count' => $count,
-    'data' => $firms
+    'data' => $firms,
+    'query' => $qb->getSQL(),
+    'count_query' => $count_outer_qb->getSQL(),
   ));
   
 });

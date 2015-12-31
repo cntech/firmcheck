@@ -1,5 +1,10 @@
 body {
   padding: 20px;
+  padding-top: 0;
+}
+
+pre {
+  white-space: normal;
 }
 
 table form {
@@ -17,6 +22,10 @@ table form {
 .wrappable-pagination > li {
   padding-top: 3px;
   padding-bottom: 3px;
+}
+
+.uk-form-controls li {
+  margin-top: 0;
 }
 
 .clickable-badge {

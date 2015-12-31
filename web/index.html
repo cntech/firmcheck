@@ -10,8 +10,18 @@
   <script src="/js/firmcheck.js" type="text/javascript"></script>
 </head>
 <body>
-  <h1>FirmCheck</h1>
   <div ng-app="firmcheck" ng-controller="dashboard">
+
+    <div class="uk-align-right">
+      <p><strong>Show SQL <input type="checkbox" ng-model="queries.shown"></strong></p>
+    </div>
+
+    <h1>FirmCheck</h1>
+    
+    <div ng-cloak ng-show="queries.shown">
+      <pre ng-bind="queries.query"></pre>
+      <pre ng-bind="queries.countQuery"></pre>
+    </div>
 
     <div id="delete-rating-modal" class="uk-modal">
       <div class="uk-modal-dialog">
@@ -26,16 +36,49 @@
         </div>
       </div>
     </div>
+        
+    <form class="uk-form uk-form-horizontal" ng-submit="setFilters()">
+      <div class="uk-form-row">
+        <label class="uk-form-label" for="">Zip Code Filter</label>
+        <div class="uk-form-controls">
+          <ul class="uk-subnav uk-subnav-pill">
+            <li ng-repeat="area in areas" ng-class="{'uk-active':areaActive(area.area)}"><a ng-bind="area.area" ng-click="setFilter('area', area.area)"></a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="uk-form-row">
+        <label class="uk-form-label" for="ratingNameFilter">Rating Name Filter</label>
+        <div class="uk-form-controls">
+          <input type="text" name="ratingNameFilter" ng-model="filterInputs.ratingName" class="uk-form-width-large">
+        </div>
+      </div>
+      <div class="uk-form-row">
+        <label class="uk-form-label" for="ratingValueFilter">Rating Value Filter</label>
+        <div class="uk-form-controls">
+          <input type="text" name="ratingValueFilter" ng-model="filterInputs.ratingValue" class="uk-form-width-large">
+        </div>
+      </div>
+      <div class="uk-form-row">
+        <button type="submit" class="uk-button uk-button-primary">Apply Filter</button>
+        <button type="button" class="uk-button" ng-click="clearFilter()">Clear Filter</button>
+      </div>
+    </form>
     
     <div>
-      <ul class="uk-subnav uk-subnav-pill">
-        <li ng-repeat="area in areas" ng-class="{'uk-active':areaActive(area.area)}"><a ng-bind="area.area" ng-click="setFilter('area', area.area)"></a></li>
-      </ul>
+      <h2>Records:
+        <span ng-show="!records.length">0</span>
+        <span ng-show="records.length">
+          <span ng-bind="records.length"></span> of
+          <span ng-bind="statistics.totalCount"></span>
+          (<span ng-bind="statistics.firstRecord + 1"></span> &rarr;
+          <span ng-bind="statistics.lastRecord + 1"></span>)
+        </span>
+      </h2>
     </div>
     
     <div ng-include="'/pagination.html'" class="fc-pagination-left"></div>
     
-    <div ng-show="!records.length">
+    <div ng-show="records == null">
       <p><img src="/img/load.gif" alt="load animation"></p>
     </div>
     
@@ -48,14 +91,14 @@
         </tr>
       </thead>
       <tbody>
-        <tr ng-repeat="record in records">
+        <tr ng-repeat="record in records" ng-click="clickRecord(record)" ng-class="{'uk-active': recordClicked(record)}">
           <td><span ng-bind="record.name"></span></td>
           <td><span ng-repeat="homepage in record.homepages"><a ng-href="{{homepage}}" ng-bind="homepage" target="_blank"></a>{{$last ? '' : ', '}}</span></td>
           <td>
             <form class="uk-form" ng-submit="submitRating(record)">
               <p class="uk-text-nowrap">
-                <input type="text" name="name" placeholder="r.name" ng-model="record.rating.name" class="uk-form-small uk-form-width-mini">
-                <input type="text" name="value" placeholder="r.value" ng-model="record.rating.value" class="uk-form-small uk-form-width-mini">
+                <input type="text" name="name" placeholder="Rating Name" ng-model="record.rating.name" class="uk-form-small uk-form-width-small">
+                <input type="text" name="value" placeholder="Rating" ng-model="record.rating.value" class="uk-form-small uk-form-width-mini">
                 <button type="submit" class="uk-button uk-button-small">Rate</button>
               </p>
               <p ng-if="record.noRatings"><em>ratings not loaded</em></p>
