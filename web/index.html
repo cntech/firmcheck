@@ -94,8 +94,8 @@
       <tbody>
         <tr ng-repeat="record in records" ng-click="clickRecord(record)" ng-class="{'uk-active': recordClicked(record)}">
           <td><span ng-bind="record.index + 1" class="uk-article-meta"></span></td>
-          <td><span ng-bind="record.name"></span></td>
-          <td><span ng-repeat="homepage in record.homepages"><a ng-href="{{homepage}}" ng-bind="homepage" target="_blank"></a>{{$last ? '' : ', '}}</span></td>
+          <td><span ng-bind="record.name" ng-class="{'fc-unrated':(!record.ratings.length)}"></span></td>
+          <td><span ng-repeat="homepage in record.homepages" ng-class="{'fc-unrated':(!record.ratings.length)}"><a ng-href="{{homepage}}" ng-bind="homepage" target="_blank"></a>{{$last ? '' : ', '}}</span></td>
           <td>
             <form class="uk-form" ng-submit="submitRating(record)">
               <p class="uk-text-nowrap">

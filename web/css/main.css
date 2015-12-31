@@ -33,3 +33,7 @@ table form {
   cursor: pointer;
 }
 
+.fc-unrated {
+  font-weight: bold;
+}
+
