@@ -68,6 +68,14 @@ angular.module('firmcheck').controller('dashboard', [
       $scope.loadPage(0)
     }
     
+    $scope.setCompanyNameFilter = function() {
+      var inputs = $scope.filterInputs
+      if(inputs.companyName) {
+        $scope.filters['f.name'] = {}
+        $scope.filters['f.name']['$like'] = '%'+inputs.companyName+'%'
+      }
+    }
+    
     $scope.setRatingNameFilter = function() {
       var inputs = $scope.filterInputs
       if(inputs.ratingName) {
@@ -114,6 +122,7 @@ angular.module('firmcheck').controller('dashboard', [
     }
     
     $scope.setFilters = function() {
+      $scope.setCompanyNameFilter()
       $scope.setRatingNameFilter()
       $scope.setRatingValueFilter()
       $scope.loadPage(0)
