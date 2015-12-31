@@ -137,7 +137,8 @@ angular.module('firmcheck').controller('dashboard', [
           query: result.query,
           countQuery: result.count_query
         }
-        $scope.records = result.data.map(function(record) {
+        $scope.records = result.data.map(function(record, index) {
+          record.index = $scope.pagination.offset + index
           record.homepages = record.homepages.split(', ')
           record.rating = {
             value: 'x'

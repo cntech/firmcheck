@@ -85,6 +85,7 @@
     <table class="uk-table">
       <thead>
         <tr>
+          <th>#</th>
           <th>Name</th>
           <th>Homepage(s)</th>
           <th>Ratings</th>
@@ -92,6 +93,7 @@
       </thead>
       <tbody>
         <tr ng-repeat="record in records" ng-click="clickRecord(record)" ng-class="{'uk-active': recordClicked(record)}">
+          <td><span ng-bind="record.index + 1" class="uk-article-meta"></span></td>
           <td><span ng-bind="record.name"></span></td>
           <td><span ng-repeat="homepage in record.homepages"><a ng-href="{{homepage}}" ng-bind="homepage" target="_blank"></a>{{$last ? '' : ', '}}</span></td>
           <td>
