@@ -2,6 +2,7 @@ angular.module('firmcheck', ['ngResource'])
 
 angular.module('firmcheck').factory('Firm', ['$resource', function($resource) {
   return $resource('/index.php/firms', {
+    includes: '@includes',
     filter: '@filter',
     offset: '@offset',
     limit: '@limit'
@@ -145,6 +146,7 @@ angular.module('firmcheck').controller('dashboard', [
     var loadFirms = function() {
       $scope.records = null
       Firm.get({
+        includes: JSON.stringify(['ratings']),
         filter: JSON.stringify($scope.filters),
         offset: $scope.pagination.offset,
         limit: $scope.pagination.limit
@@ -159,8 +161,6 @@ angular.module('firmcheck').controller('dashboard', [
           record.rating = {
             value: 'x'
           }
-          record.noRatings = true
-          loadRatings(record)
           return record
         })
         $scope.statistics = {
@@ -203,7 +203,6 @@ angular.module('firmcheck').controller('dashboard', [
         firm_id: record.id,
       }, function(ratings) {
         record.ratings = ratings
-        record.noRatings = false
       })
     }
     

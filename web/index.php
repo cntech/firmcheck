@@ -96,14 +96,47 @@ function filter($qb, $param_qb, $columns, $filter) {
   return $result;
 }
 
+function include_subrecords($db,
+    &$parent_records, $parent_id_field,
+    $child_table, $parent_ids) {
+  
+  // query sub-records
+  $qb = $db->createQueryBuilder();
+  $qb->select('*')->from($child_table);
+  $parent_id_placeholders = array_map(function($item) use ($qb) {
+    return $qb->createPositionalParameter($item);
+  }, $parent_ids);
+  $joined_parent_id_placeholders = join(', ', $parent_id_placeholders);
+  $qb->where('"'.$parent_id_field.'" IN ('.$joined_parent_id_placeholders.')');
+  $query = $qb->execute();
+  $child_records = $query->fetchAll();
+  
+  // attach sub-records to parent records
+  $keyed_parent_records = array();
+  foreach($parent_records as &$parent_record) {
+    $parent_record[$child_table] = array();
+    $keyed_parent_records[$parent_record['id']] = &$parent_record;
+  }
+  foreach($child_records as $child_record) {
+    array_push(
+      $keyed_parent_records[$child_record[$parent_id_field]][$child_table],
+      $child_record
+    );
+  }
+  
+}
+
 $app->get('/firms', function(Request $request) use ($app) {
   $qb = $app['db']->createQueryBuilder();
   $count_qb = $app['db']->createQueryBuilder();
   $count_outer_qb = $app['db']->createQueryBuilder();
   
-  $filter = json_decode($request->query->get('filter'), TRUE);
+  $filter = json_decode($request->query->get('filter'), TRUE) ?: array();
+  $includes = json_decode($request->query->get('includes'), TRUE) ?: array();
   $offset = ((int)$request->query->get('offset')) ?: 0;
-  $limit = ((int)$request->query->get('limit')) ?: FALSE;
+  $limit = ((int)$request->query->get('limit')) ?: 500; //FALSE;
+  // limit is set to less than 999 to not exceed sqlite3's
+  // maximum number of host parameters in a sub-record query
   
   $firm_fields = array('f.id', 'f.area', 'f.name', 'f.firmenAbcUrl', 'f.homepages');
   $rating_fields = array('GROUP_CONCAT(r.name) as rating_names', 'GROUP_CONCAT(r.rating) as rating_values');
@@ -155,6 +188,14 @@ $app->get('/firms', function(Request $request) use ($app) {
   // execute the records query
   $query = $qb->execute();
   $firms = $query->fetchAll();
+  
+  // include sub-records
+  $ids = array_map(function($firm) {
+    return $firm['id'];
+  }, $firms);
+  foreach($includes as $include) {
+    include_subrecords($app['db'], $firms, 'firm_id', $include, $ids);
+  }
   
   // return the results as JSON object
   return $app->json(array(
