@@ -67,6 +67,11 @@ angular.module('firmcheck').controller('dashboard', [
       $scope.filters[field] = value
       $scope.loadPage(0)
     }
+
+    $scope.clearFilter = function(field) {
+      delete $scope.filters[field]
+      $scope.loadPage(0)
+    }
     
     $scope.setCompanyNameFilter = function() {
       var inputs = $scope.filterInputs
@@ -130,7 +135,7 @@ angular.module('firmcheck').controller('dashboard', [
       $scope.loadPage(0)
     }
     
-    $scope.clearFilter = function() {
+    $scope.clearFilters = function() {
       initFilters({
         area: $scope.filters.area
       })
@@ -185,6 +190,11 @@ angular.module('firmcheck').controller('dashboard', [
     loadAreas()
     
     $scope.areaActive = function(area) {
+      if(!area) {
+        // return true if area filter is set
+        return !!$scope.filters['area']
+      }
+      // return true if area filter equals area
       return $scope.filters['area'] == area
     }
     
