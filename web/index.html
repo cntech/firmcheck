@@ -39,7 +39,7 @@
         
     <form class="uk-form uk-form-horizontal" ng-submit="setFilters()">
       <div class="uk-form-row">
-        <label class="uk-form-label" for="">Zip Code Filter</label>
+        <label class="uk-form-label" for="">Area Code Filter</label>
         <div class="uk-form-controls">
           <ul class="uk-subnav uk-subnav-pill">
             <li ng-repeat="area in areas" ng-class="{'uk-active':areaActive(area.area)}"><a ng-bind="area.area" ng-click="setFilter('area', area.area)"></a></li>
@@ -99,9 +99,20 @@
       </thead>
       <tbody>
         <tr ng-repeat="record in records" ng-click="clickRecord(record)" ng-class="{'uk-active': recordClicked(record)}">
-          <td><span ng-bind="record.index + 1" class="uk-article-meta"></span></td>
-          <td><span ng-bind="record.name" ng-class="{'fc-unrated':(!record.ratings.length)}"></span></td>
-          <td><span ng-repeat="homepage in record.homepages" ng-class="{'fc-unrated':(!record.ratings.length)}"><a ng-href="{{homepage}}" ng-bind="homepage" target="firm_homepage"></a>{{$last ? '' : ', '}}</span></td>
+          <td>
+            <span class="uk-article-meta">
+              <span ng-bind="record.index + 1"></span>
+            </span>
+          </td>
+          <td>
+            <span ng-bind="record.name" ng-class="{'fc-unrated':(!record.ratings.length)}"></span><br>
+            <span class="uk-article-meta">Area: <span ng-bind="record.area"></span></span>
+          </td>
+          <td>
+            <span ng-repeat="homepage in record.homepages" ng-class="{'fc-unrated':(!record.ratings.length)}">
+              <a ng-href="{{homepage}}" ng-bind="homepage" target="firm_homepage"></a>{{$last ? '' : ', '}}
+            </span>
+          </td>
           <td>
             <form class="uk-form" ng-submit="submitRating(record)">
               <p class="uk-text-nowrap">
