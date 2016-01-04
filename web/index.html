@@ -43,14 +43,25 @@
         <div class="uk-form-controls">
           <ul class="uk-subnav uk-subnav-pill">
             <li ng-class="{'uk-active':(!areaActive())}"><a ng-click="clearFilter('area')">All Area Codes</a></li>
-            <li ng-repeat="area in areas" ng-class="{'uk-active':areaActive(area.area)}"><a ng-bind="area.area" ng-click="setFilter('area', area.area)"></a></li>
+            <li ng-repeat="area in areas" ng-class="{'uk-active':areaActive(area.area)}"><a ng-bind="area.area" ng-click="setAreaFilter(area.area)"></a></li>
           </ul>
+        </div>
+      </div>
+      <div class="uk-form-row" ng-cloak ng-if="!areaActive()">
+        <div class="uk-form-controls">
+          <input type="text" name="companyAreaFilter" ng-model="filterInputs.companyArea" class="uk-form-width-large" placeholder="e.g. 1020, 48, 49 (which means: list 1020, 48?? and 49??)">
         </div>
       </div>
       <div class="uk-form-row">
         <label class="uk-form-label" for="companyNameFilter">Company Name Filter</label>
         <div class="uk-form-controls">
           <input type="text" name="companyNameFilter" ng-model="filterInputs.companyName" class="uk-form-width-large">
+        </div>
+      </div>
+      <div class="uk-form-row">
+        <label class="uk-form-label" for="companyHomepageFilter">Company Homepage Filter</label>
+        <div class="uk-form-controls">
+          <input type="text" name="companyHomepageFilter" ng-model="filterInputs.companyHomepage" class="uk-form-width-large">
         </div>
       </div>
       <div class="uk-form-row">

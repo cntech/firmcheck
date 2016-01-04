@@ -51,16 +51,20 @@ angular.module('firmcheck').controller('dashboard', [
       limit: 100
     }
     
+    var initFilterInputs = function() {
+      $scope.filterInputs = {}
+    }
+    initFilterInputs()
     var initFilters = function(additional) {
       $scope.filters = {
         'homepages': {
           '$not': '' // not empty
-        }
+        },
+        '$and': [] // put $or filters in here
       }
       if(additional) {
         angular.extend($scope.filters, additional)
       }
-      $scope.filterInputs = {}
     }
     initFilters()
     
@@ -68,10 +72,31 @@ angular.module('firmcheck').controller('dashboard', [
       $scope.filters[field] = value
       $scope.loadPage(0)
     }
+    
+    $scope.setAreaFilter = function(value) {
+      delete $scope.filterInputs.companyArea
+      $scope.setFilters()
+      $scope.setFilter('area', value)
+    }
 
     $scope.clearFilter = function(field) {
       delete $scope.filters[field]
       $scope.loadPage(0)
+    }
+    
+    $scope.setCompanyAreaFilter = function() {
+      var inputs = $scope.filterInputs
+      if(inputs.companyArea) {
+        var companyAreas = inputs.companyArea.split(',').map(function(area) {
+          return {
+            'f.area': {
+              '$like': area.trim()+'%'
+            }
+          }
+        })
+        $scope.filters['$and'].push({'$or': companyAreas})
+      }
+      console.log($scope.filters)
     }
     
     $scope.setCompanyNameFilter = function() {
@@ -81,6 +106,16 @@ angular.module('firmcheck').controller('dashboard', [
         $scope.filters['f.name']['$like'] = '%'+inputs.companyName+'%'
       } else {
         delete $scope.filters['f.name']
+      }
+    }
+    
+    $scope.setCompanyHomepageFilter = function() {
+      var inputs = $scope.filterInputs
+      if(inputs.companyHomepage) {
+        $scope.filters['f.homepages'] = {}
+        $scope.filters['f.homepages']['$like'] = '%'+inputs.companyHomepage+'%'
+      } else {
+        delete $scope.filters['f.homepages']
       }
     }
     
@@ -130,13 +165,19 @@ angular.module('firmcheck').controller('dashboard', [
     }
     
     $scope.setFilters = function() {
+      initFilters({
+        area: $scope.filters.area
+      })
+      $scope.setCompanyAreaFilter()
       $scope.setCompanyNameFilter()
+      $scope.setCompanyHomepageFilter()
       $scope.setRatingNameFilter()
       $scope.setRatingValueFilter()
       $scope.loadPage(0)
     }
     
     $scope.clearFilters = function() {
+      initFilterInputs()
       initFilters({
         area: $scope.filters.area
       })
